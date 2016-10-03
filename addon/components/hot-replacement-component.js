@@ -1,5 +1,4 @@
 import Ember from 'ember';
-import HotComponentMixin from 'ember-cli-hot-loader/mixins/hot-component';
 import clearCache from 'ember-cli-hot-loader/utils/clear-container-cache';
 import layout from '../templates/components/hot-replacement-component';
 
@@ -26,10 +25,22 @@ function matchingComponent (componentName, modulePath) {
     matchesPodConvention(componentName, modulePath);
 }
 
-const HotReplacementComponent = Ember.Component.extend(HotComponentMixin, {
+export default Ember.Component.extend({
   baseComponentName: null,
   tagName: '',
   layout,
+
+  hotReload: Ember.inject.service(),
+  init () {
+    this._super(...arguments);
+    this.get('hotReload').on('willHotReload', this, '__rerenderOnTemplateUpdate');
+    this.get('hotReload').on('willLiveReload', this, '__willLiveReload');
+  },
+  willDestroyElement () {
+    this._super(...arguments);
+    this.get('hotReload').off('willHotReload', this, '__rerenderOnTemplateUpdate');
+    this.get('hotReload').off('willLiveReload', this, '__willLiveReload');
+  },
 
   __willLiveReload (event) {
     if (matchingComponent(this.get('baseComponentName'), event.modulePath)) {
@@ -53,5 +64,3 @@ const HotReplacementComponent = Ember.Component.extend(HotComponentMixin, {
       }
   }
 });
-
-export default HotReplacementComponent;
